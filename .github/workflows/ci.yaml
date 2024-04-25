@@ -43,65 +43,7 @@ jobs:
           ${{ env.TOX_COMMAND }} -e ${{ matrix.toxenv }}
 
   e2e:
-    runs-on: arc-runner
-    needs: unittest
-    env:
-      GENESIS_POSTGRESQL_NAME: genialis-base
-      GENESIS_POSTGRESQL_USER: genialis-base
-      GENESIS_POSTGRESQL_PASSWORD: genialis-base
-      GENESIS_POSTGRESQL_PORT: 55434
-      GENESIS_REDIS_PORT: 56381
-      GENESIS_RESDK_PATH: ".."
-      GENESIS_REST_THROTTLING: '{"login": "100000/hour", "credentials": "100000/hour", "email": "100000/hour"}'
-
-    services:
-      postgres:
-        image: public.ecr.aws/docker/library/postgres:14
-        env:
-          POSTGRES_USER: genialis-base
-          POSTGRES_DB: genialis-base
-          POSTGRES_PASSWORD: genialis-base
-        ports:
-          - 55434:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-      redis:
-        image: public.ecr.aws/docker/library/redis:7-alpine
-        ports:
-          - 56381:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - name: Checkout resolwe-bio-py
-        uses: actions/checkout@v4
-
-      - name: Checkout genialis-base
-        uses: actions/checkout@v4
-        with:
-          repository: genialis/genialis-base
-          path: genialis-base
-          ssh-key: ${{ secrets.GHA_SSH_PRIVATE_KEY_GENIALIS_BASE }}
-
-      - name: Run tests
-        run: |
-          cd genialis-base
-
-          # Prepare frontend configuration
-          mkdir -p frontend/genjs/schema
-          echo '{}' > frontend/genjs/schema/configuration.json
-
-          # Make sure `python` refers to the tox environment's Python
-          export PATH=`pwd`/.tox/py310-e2e-resdk/bin:$PATH
-
-          tox --skip-missing-interpreters false -e py310-e2e-resdk
+    uses: ./.github/workflows/e2e.yaml
 
   build:
     runs-on: arc-runner
